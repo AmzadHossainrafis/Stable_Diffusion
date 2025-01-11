@@ -57,17 +57,44 @@ class VAE_resblock(nn.Module):
         return out  # Return the output tensor
 
 
-class VAE_attention(nn.Module): 
-    def __init__(self, in_channels): 
+class VAE_attention(nn.Module):
+    """
+    VAE_attention is an attention mechanism used in Variational Autoencoders (VAEs).
+    It applies Group Normalization followed by a multi-head attention mechanism.
+    """
+
+    def __init__(self, channels, num_heads):
+        """
+        Initializes the VAE_attention.
+
+        Parameters:
+        channels (int): Number of input and output channels.
+        num_heads (int): Number of attention heads.
+        """
         super(VAE_attention, self).__init__()
-        self.groupnorm = nn.GroupNorm(32, in_channels)
-        self.attention = nn.MultiheadAttention(in_channels, 1 , )
+        self.groupnorm = nn.GroupNorm(32, channels)
+        self.attention = nn.MultiheadAttention(channels, num_heads)
 
-    def forward(self, x): 
-        out = self.groupnorm(x)
-        out = F.silu(out)
-        out = self.attention(out, out, out)
-        return out
+    def forward(self, x):
+        """
+        Forward pass of the VAE_attention.
 
+        Parameters:
+        x (torch.Tensor): Input tensor with shape (Batch_Size, Features, Height, Width).
 
+        Returns:
+        torch.Tensor: Output tensor after applying attention mechanism.
+        """
+        residue = x 
 
+        x = self.groupnorm(x)  # Apply Group Normalization
+
+        n, c, h, w = x.shape  # Get the shape of the input tensor
+        x = x.view((n, c, h * w))  # Reshape the tensor for attention mechanism
+        x = x.transpose(-1, -2)  
+        x = self.attention(x, x, x)[0]  
+        x = x.transpose(-1, -2) 
+        x = x.view((n, c, h, w)) 
+        x += residue  # Add the residue (shortcut connection) to the output tensor
+
+        return x  # Return the output tensor

@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: SDiffsion
+Version: 0.0.0
+Summary: A small python package for image deblurring using DnCNN
+Home-page: https://github.com/Amzad hossain/SDiffsion
+Author: Amzad hossain
+Author-email: amzad.rafi@northsouth.edu
+Project-URL: Bug Tracker, https://github.com/Amzad hossain/SDiffsion/issues
+License-File: LICENSE

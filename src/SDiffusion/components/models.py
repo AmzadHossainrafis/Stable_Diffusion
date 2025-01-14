@@ -73,9 +73,9 @@ class VAE_attention(nn.Module):
         """
         super(VAE_attention, self).__init__()
         self.groupnorm = nn.GroupNorm(32, channels)
-        self.attention = nn.MultiheadAttention(channels, num_heads, )
         self.in_proj = nn.Linear(channels, 3 * channels, bias=True)
         self.out_proj = nn.Linear(channels, channels, bias=False)
+        self.attention = nn.MultiheadAttention(channels, num_heads, )
 
     def forward(self, x):
         """
@@ -87,9 +87,20 @@ class VAE_attention(nn.Module):
         Returns:
         torch.Tensor: Output tensor after applying attention mechanism.
         """
-        residue = x 
+    
 
         x = self.groupnorm(x)  # Apply Group Normalization
 
         n, c, h, w = x.shape  # Get the shape of the input tensor
+        key , query, value = self.in_proj(x).chunk(3, dim=-1)  
+
+        key = key.view(n, h * w, c).transpose(1, 2)  # Reshape key tensor
+        query = query.view(n, h * w, c).transpose(1, 2)
+        value = value.view(n, h * w, c).transpose(1, 2)
+        out, _ = self.attention(query, key, value)  
+        out = out.transpose(1, 2).view(n, c, h, w)  
+        out = self.out_proj(out)  
+        return out 
+
+
         

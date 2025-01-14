@@ -73,7 +73,9 @@ class VAE_attention(nn.Module):
         """
         super(VAE_attention, self).__init__()
         self.groupnorm = nn.GroupNorm(32, channels)
-        self.attention = nn.MultiheadAttention(channels, num_heads)
+        self.attention = nn.MultiheadAttention(channels, num_heads, )
+        self.in_proj = nn.Linear(channels, 3 * channels, bias=True)
+        self.out_proj = nn.Linear(channels, channels, bias=False)
 
     def forward(self, x):
         """
@@ -90,11 +92,4 @@ class VAE_attention(nn.Module):
         x = self.groupnorm(x)  # Apply Group Normalization
 
         n, c, h, w = x.shape  # Get the shape of the input tensor
-        x = x.view((n, c, h * w))  # Reshape the tensor for attention mechanism
-        x = x.transpose(-1, -2)  
-        x = self.attention(x, x, x)[0]  
-        x = x.transpose(-1, -2) 
-        x = x.view((n, c, h, w)) 
-        x += residue  # Add the residue (shortcut connection) to the output tensor
-
-        return x  # Return the output tensor
+        

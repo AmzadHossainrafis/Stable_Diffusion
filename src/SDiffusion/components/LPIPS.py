@@ -2,9 +2,6 @@ from __future__ import absolute_import
 from collections import namedtuple
 import torch
 import torch.nn as nn
-import torch.nn.init as init
-from torch.autograd import Variable
-import numpy as np
 import torch.nn
 import torchvision
 

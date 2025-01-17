@@ -24,7 +24,7 @@ transform = torchvision.transforms.Compose(
 train_dataset = torchvision.datasets.ImageFolder(root=Dataset_dir, transform=transform)
 
 train_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=20, num_workers=4, shuffle=True
+    train_dataset, batch_size=27, num_workers=4, shuffle=True
 )
 
 

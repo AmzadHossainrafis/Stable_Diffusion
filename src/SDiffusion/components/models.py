@@ -48,9 +48,7 @@ class VAE_resblock(nn.Module):
         out = self.groupnorm2(out)
         out = F.silu(out)
         out = self.conv1(out)
-        print(f'out shape: {out.shape}')
         out += self.shortcut(residual)
-        print(f'out shape: {out.shape}')
         return out
     
 
@@ -110,21 +108,14 @@ class VAE_encoder(nn.Module):
                     x = x.view(n, c, h, w)
             else:
                 x = i(x)
-            # print(f'input shape: {x.shape}')
-            # print(f'current layer: {i}') 
-            # print(f' out x shape: {x.shape}')
-            # print('-------------------')
+           
         
         mean, log_variance = torch.chunk(x, 2, dim=1)
         log_variance = torch.clamp(log_variance, -30, 20)
         variance = log_variance.exp()
         stdev = variance.sqrt() 
-        print(f'mean shape: {mean.shape}')
-        print(f'stdev shape: {stdev.shape}')
-        print(f'noise shape: {noise.shape}')
         x = mean + stdev * noise
         x *= 0.18215
-        print(f'out shape: {x.shape}')
         return x 
 
 
@@ -193,30 +184,41 @@ class VAE_decoder(nn.Module):
                     x = x.view(n, c, h, w)
             else:
                 x = i(x)
-            print(f'input shape: {x.shape}')
-            # print(f'current layer: {i}') 
-            # print(f' out x shape: {x.shape}')
-            # print('-------------------')
+
         return x
 
 
 
-if __name__ == "__main__":
-    model = VAE_encoder().to('cuda')
-    input_shape = 64
-    x = torch.randn(1, 3, input_shape, input_shape).to('cuda')
-    #note noise must be 1/8 the size of the input image 
-    noise = torch.randn(1, 256, input_shape//8, input_shape//8).to('cuda')
-    out = model(x, noise)
-    print(out.shape)
-    model = VAE_decoder().to('cuda')
-    out = model(out)
-    print("------decoder------")
-    print(out.shape) 
-    print('done')
+class VAE(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.encoder = VAE_encoder()
+        self.decoder = VAE_decoder()
 
-    #number of perameters 
-    # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+    def forward(self, x, noise):
+        x = self.encoder(x, noise)
+        x = self.decoder(x)
+        return x
+
+
+
+
+# if __name__ == "__main__":
+#     model = VAE_encoder().to('cuda')
+#     input_shape = 64
+#     x = torch.randn(1, 3, input_shape, input_shape).to('cuda')
+#     #note noise must be 1/8 the size of the input image 
+#     noise = torch.randn(1, 256, input_shape//8, input_shape//8).to('cuda')
+#     out = model(x, noise)
+#     print(out.shape)
+#     model = VAE_decoder().to('cuda')
+#     out = model(out)
+#     print("------decoder------")
+#     print(out.shape) 
+#     print('done')
+
+#     #number of perameters 
+#     # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
 
 

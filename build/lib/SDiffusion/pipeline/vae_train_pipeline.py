@@ -24,34 +24,34 @@ transform = torchvision.transforms.Compose(
 train_dataset = torchvision.datasets.ImageFolder(root=Dataset_dir, transform=transform)
 
 train_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=80, num_workers=4, shuffle=True
+    train_dataset, batch_size=27, num_workers=4, shuffle=True
 )
 
 
 
 class VAE_trainer:
     def __init__(self, config, model, optimizer):
-        self.model = model.to(config['device'])
+        self.model = model.eval().to(config['device'])
         self.optimizer = optimizer
         self.config = config
 
     def train(self, train_loader):
         self.model.train()
+        mse_loss_fn = nn.MSELoss()
+        lpips_loss_fn = LPIPS().to('cuda') # Assuming LPIPS is defined elsewhere
+
         for epoch in range(self.config['epochs']):
             for i, (x, _) in enumerate(tqdm.tqdm(train_loader)):
                 x = x.to(self.config['device'])
                 noise = torch.randn(x.size(0), 256, 8, 8).to(self.config['device'])
                 x_hat = self.model(x, noise)
-
-                mse_loss = nn.MSELoss(x_hat, x)
-                kl_loss = nn.KLDivLoss(x_hat, x)
-                LPIPS_loss = LPIPS(x_hat, x)
-                loss = mse_loss + kl_loss + LPIPS_loss
-
+                mse_loss = mse_loss_fn(x_hat, x)
+                lpips_loss = torch.mean(lpips_loss_fn(x_hat, x))
+                loss = mse_loss + lpips_loss
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                print(f'epoch: {epoch}, batch: {i}, loss: {loss.item()}')
+            print(f'epoch: {epoch} loss: {loss.item()}')
         torch.save(self.model.state_dict(), self.config['model_save_path'])
         print('model saved successfully')
 

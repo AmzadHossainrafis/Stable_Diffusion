@@ -8,8 +8,8 @@ today = dt.datetime.today().strftime("%Y-%m-%d")
 logging_str = "[%(asctime)s: %(levelname)s: %(module)s: %(message)s]"
 
 
-dir = r"{}".format(Path.cwd().parents[0]) + "/logs"
-
+dir = r"/home/amzad/Desktop/stable_diffusion/logs/"
+print(dir)
 
 log_filepath = os.path.join(dir, f"running_logs_{today}.log")
 os.makedirs(dir, exist_ok=True)

@@ -28,20 +28,21 @@ train_loader = torch.utils.data.DataLoader(
 class VAETrainer:
     """
     VAE_trainer is responsible for training a Variational Autoencoder (VAE) model along with a Discriminator model.
-    
+
     Args:
         config (dict): Configuration dictionary containing training parameters.
         model (nn.Module): The VAE model to be trained.
         disc_model (nn.Module): The Discriminator model to be trained.
     def train(self, train_loader):
-   
+
         Train the VAE model using the provided data loader.
 
         Parameters:
         train_loader (torch.utils.data.DataLoader): DataLoader for the training dataset.
-     
+
         disc_optimizer (torch.optim.Optimizer): Optimizer for the Discriminator model.
     """
+
     def __init__(self, config, model, disc_model, optimizer, disc_optimizer):
         """
         Initialize the VAE_trainer class.
@@ -82,57 +83,80 @@ class VAETrainer:
             - The losses are accumulated and the optimizer steps are performed after a specified number of steps.
         """
         mse_loss_fn = nn.MSELoss()
-        lpips_loss_fn = LPIPS().eval().to(self.config['device'])          
-        disc_loss_fn = nn.BCELoss()
-        losses, gen_losses, recon_losses, perseptual_loss, disc_losses = [], [], [], [], []
+        lpips_loss_fn = LPIPS().to(self.config["device"])
+        disc_loss_fn = nn.MSELoss()
+        losses, gen_losses, recon_losses, perseptual_losses, disc_losses = (
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
 
-        #model training  loop 
+        # model training  loop
         self.model.train()
         for epoch in range(self.config["epochs"]):
             for i, (images, _) in enumerate(tqdm.tqdm(train_loader)):
                 images = images.to(self.config["device"])
-                output = self.model(images) 
-                recon_loss = mse_loss_fn(output, images) 
+                noise = torch.randn(images.shape[0], 256,8,8).to(self.config["device"])
+                output = self.model(images, noise)
+                recon_loss = mse_loss_fn(output, images)
                 perseptual_loss = torch.mean(lpips_loss_fn(output, images))
 
-
                 if i >= self.config["disc_start"]:
-                    Disc_output = self.disc_model(images) 
-                    disc_loss = disc_loss_fn(Disc_output, torch.ones_like(Disc_output))
+                    Disc_output = self.disc_model(images)
+                    disc_loss = disc_loss_fn(Disc_output, torch.ones(Disc_output.shape, device=self.config["device"]))
                     disc_losses.append(disc_loss.item())
-
 
                 recon_losses.append(recon_loss.item())
                 recon_loss = recon_loss / self.config["encoder_acc_steps"]
 
                 g_loss = recon_loss
 
-                if i >= self.config["disc_start"]: 
+                if i >= self.config["disc_start"]:
                     dis_fake = self.disc_model(output)
-                    disc_loss = disc_loss_fn(dis_fake,  torch.ones(dis_fake.shape, device=self.config["device"]))
-                    gen_losses.append(self.config["disc_loss_weight"] * disc_loss.item())
+                    disc_loss = disc_loss_fn(
+                        dis_fake,
+                        torch.ones(dis_fake.shape, device=self.config["device"]),
+                    )
+                    gen_losses.append(
+                        self.config["disc_loss_weight"] * disc_loss.item()
+                    )
                     g_loss += self.config["disc_loss_weight"] * disc_loss
 
-                perseptual_loss.append(self.config["perceptual_loss_weight"] * perseptual_loss.item())
-                g_loss += self.config["perceptual_loss_weight"] * perseptual_loss / self.config["encoder_acc_steps"]
+                perseptual_losses.append(
+                    self.config["perceptual_loss_weight"] * perseptual_loss.item()
+                )
+                g_loss += (
+                    self.config["perceptual_loss_weight"]
+                    * perseptual_loss
+                    / self.config["encoder_acc_steps"]
+                )
 
                 losses.append(g_loss.item())
                 g_loss.backward()
 
-                # discriminator training 
-            
-                if i >= self.config["disc_start"]: 
-                    fake = output.detach() 
+                # discriminator training
+
+                if i >= self.config["disc_start"]:
+                    fake = output.detach()
                     fack = self.disc_model(fake)
-                    real= self.disc_model(images)
+                    real = self.disc_model(images)
 
-                    fake_loss = disc_loss_fn(fack, torch.zeros(fack.shape, device=self.config["device"]))
-                    real_loss = disc_loss_fn(real, torch.ones(real.shape, device=self.config["device"]))
-                    discriminator_loss = self.config['nomalizer_weight']*(real_loss + fake_loss) / 2
-
+                    fake_loss = disc_loss_fn(
+                        fack, torch.zeros(fack.shape, device=self.config["device"])
+                    )
+                    real_loss = disc_loss_fn(
+                        real, torch.ones(real.shape, device=self.config["device"])
+                    )
+                    discriminator_loss = (
+                        self.config["nomalizer_weight"] * (real_loss + fake_loss) / 2
+                    )
 
                     disc_losses.append(discriminator_loss.item())
-                    discriminator_loss = discriminator_loss / self.config["encoder_acc_steps"]
+                    discriminator_loss = (
+                        discriminator_loss / self.config["encoder_acc_steps"]
+                    )
 
                     discriminator_loss.backward()
 
@@ -151,7 +175,7 @@ class VAETrainer:
 
             if len(losses) > 0:
                 print(
-                    f"Epoch {epoch+1}/{self.config['epochs']}, "
+                    f"Epoch {epoch+1}/{self.config['epochs']} "
                     f"Loss: {sum(losses)/len(losses):.4f}, "
                     f"Recon Loss: {sum(recon_losses)/len(recon_losses):.4f}, "
                     f"Perseptual Loss: {sum(perseptual_loss)/len(perseptual_loss):.4f}, "
@@ -159,14 +183,12 @@ class VAETrainer:
                 )
 
             else:
-                print(f"Epoch {epoch+1}/{self.config['epochs']},
-                    Loss: {sum(losses)/len(losses):.4f},
-                    Recon Loss: {sum(recon_losses)/len(recon_losses):.4f},
-                    Perseptual Loss: {sum(perseptual_loss)/len(perseptual_loss):.4f},
-                    , Disc Loss: {sum(disc_losses)/len(disc_losses):.4f}"
+                print(
+                    f"Epoch {epoch+1}/{self.config['epochs']} , recon_loss: {recon_loss.item():.4f}"
+                    f"Perseptual Loss: {perseptual_loss.item():.4f} , Disc Loss: {disc_loss.item():.4f}"
                 )
-            
-            #save the model 
+
+            # save the model
             if epoch % self.config["save_interval"] == 0:
                 torch.save(self.model.state_dict(), self.config["model_path"])
                 torch.save(self.disc_model.state_dict(), self.config["disc_model_path"])
@@ -174,10 +196,26 @@ class VAETrainer:
 
             print("Training completed")
 
-                    
 
-            
+if __name__ == "__main__":
+    config = {
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
+        "epochs": 10,
+        "encoder_acc_steps": 1,
+        "disc_start": 200,
+        "disc_loss_weight": 0.1,
+        "perceptual_loss_weight": 0.1,
+        "nomalizer_weight": 0.1,
+        "save_interval": 10,
+        "model_ckpt_dir": "model_checkpoint",
+        "model_path": "vae_model.pth",
+        "disc_model_path": "disc_model.pth",
+    }
 
+    model = VAE()
+    disc_model = Discriminator()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    disc_optimizer = torch.optim.Adam(disc_model.parameters(), lr=1e-3)
 
-            
-
+    trainer = VAETrainer(config, model, disc_model, optimizer, disc_optimizer)
+    trainer.train(train_loader)

@@ -1,7 +1,6 @@
 # bin/pythoncls
 
 import sys
-import logging
 from SDiffusion.utils.logger import logger
 import datetime as dt
 
@@ -68,14 +67,14 @@ class CustomException(Exception):
         return f"{self.error_message}"
 
 
-if __name__ == "__main__":
-    try:
-        a = 1 / 0
-    except Exception as e:
-        logger.info("division by zero is not possible")
-        raise CustomException(e, sys)
-    # try:
-    #     image_name = "test.jpg"
-    #     raise InvalidFormatError(image_name)
-    # except Exception as e:
-    #     print(e)
+# if __name__ == "__main__":
+#     try:
+#         a = 1 / 0
+#     except Exception as e:
+#         logger.info("division by zero is not possible")
+#         raise CustomException(e, sys)
+#     # try:
+#     #     image_name = "test.jpg"
+#     #     raise InvalidFormatError(image_name)
+#     # except Exception as e:
+#     #     print(e)

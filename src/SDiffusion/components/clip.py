@@ -1,32 +1,65 @@
-
-import torchvision 
-import torch.nn as nn 
+import torchvision
+import torch.nn as nn
 from torchinfo import summary
+import torch 
 
-class clip_imagent_encoder(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.model = torchvision.models.resnet50(pretrained=True)   
-        self.model = nn.Sequential(*list(self.model.children())[:-2])
-        self.model.eval()
-        self.model.requires_grad_(False)
-        self.reshape = nn.Flatten()
-        # self.model last layer shape is (batch, 2048, 7, 7)
-        self.linner = nn.Linear(2048*7*7, 512)
+
+class CLIPEmbedding(nn.Module):
+    def __init__(self, vocab, n_emb, token):
+        super().__init__()
+        self.text_embedding = nn.Embedding(vocab, n_emb)
+        self.positional_embedding = nn.Parameter(torch.zeros(token, n_emb))
+
+
+    def forward(self, x): 
+        x = self.text_embedding(x)
+        x = x + self.positional_embedding
+        return x
+    
+class CLIPLayer(nn.Module):
+    def __init__(self, n_emb, n_head, ):
+        super().__init__()
+        self.layer_norm1 = nn.LayerNorm(n_emb)
+        self.self_attn = nn.MultiheadAttention(n_emb, n_head)
+        self.layer_norm2 = nn.LayerNorm(n_emb)
+
+        self.linear1 = nn.Linear(n_emb, 4 * n_emb)
+        self.linear2 = nn.Linear(4 * n_emb, n_emb)
 
     def forward(self, x):
-        x = self.model(x)
-        x = self.reshape(x)
-        x = self.linner(x)
-    
+        residule = x 
+
+        x = self.layer_norm1(x)
+        q, k ,v = x.chunk(3, dim=-1)
+        x, _ = self.self_attn(q, k, v)
+        x = x + residule
+
+
+        residule = x
+
+        x = self.layer_norm2(x)
+        x = self.linear1(x)
+        x = torch.sigmoid(x * 1.702)
+        x = self.linear2(x)
+        x = x + residule
+
+
         return x
-        
+    
 
 
+class CLIP(nn.Module):
+    def __init__(self, vocab, n_emb, n_head, token):
+        super().__init__()
+        self.embedding = CLIPEmbedding(vocab, n_emb, token)
+        self.layer = nn.ModuleList([CLIPLayer(12, 768) for _ in range(12)])
+        self.norm = nn.LayerNorm(n_emb)
 
+    def forward(self, e):
+        x = self.embedding(e)
 
-# if __name__ == '__main__':
-#     import torch
-#     model = clip_imagent_encoder()
-#     print(f'model output shape: {model(torch.randn(1, 3, 224, 224)).shape}')
-#     print(summary(model, input_size=(1, 3, 224, 224), verbose=1))
+        for layer in self.layer:
+            x = layer(x)
+        x = self.norm(x)
+        return x
+    

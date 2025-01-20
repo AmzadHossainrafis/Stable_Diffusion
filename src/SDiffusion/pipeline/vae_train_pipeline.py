@@ -1,29 +1,11 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn as nn 
 import torchvision
 from SDiffusion.components.models import VAE, Discriminator
 import tqdm
 from SDiffusion.components.LPIPS import LPIPS
-import matplotlib.pyplot as plt
-
-
-Dataset_dir: str = r"/home/amzad/Downloads/celb_face/img_align_celeba/"
-
-transform = torchvision.transforms.Compose(
-    [
-        torchvision.transforms.Resize((64, 64)),
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    ]
-)
-
-# load the dataset
-train_dataset = torchvision.datasets.ImageFolder(root=Dataset_dir, transform=transform)
-
-train_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=27, num_workers=4, shuffle=True
-)
+from SDiffusion.utils.exception import CustomException
+from SDiffusion.utils.logger import logger
 
 
 class VAETrainer:
@@ -175,15 +157,11 @@ class VAETrainer:
                     self.optimizer.step()
                     self.optimizer.zero_grad()
 
-            # self.model.step()
-            # self.model.zero_grad()
-            # self.disc_model.step()
-            # self.disc_model.zero_grad()
             self.optimizer.step()
             self.optimizer.zero_grad()
             self.disc_optimizer.step()
             self.disc_optimizer.zero_grad()
-
+            logger.info(f'Epoch {epoch+1}/{self.config["epochs"]} , recon_loss: {recon_loss.item():.4f}')
             
 
             if len(losses) > 0:

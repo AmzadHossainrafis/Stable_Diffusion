@@ -18,6 +18,10 @@ dowload dataset : [here](https://www.kaggle.com/datasets/jessicali9530/celeba-da
 To train the Variational Autoencoder (VAE), follow these steps:
 
 1. Install requirements
+    ```bash 
+    $ pip install . 
+    
+    ```
     for training the vae there is no other requrement without pytorch 
     you can find the more , about [pytorch installation](https://pytorch.org/) 
 

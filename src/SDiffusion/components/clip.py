@@ -30,8 +30,8 @@ class CLIPLayer(nn.Module):
         residule = x 
 
         x = self.layer_norm1(x)
-        q, k ,v = x.chunk(3, dim=-1)
-        x, _ = self.self_attn(q, k, v)
+        # q, k ,v = x.chunk(3, dim=-1)
+        x, _ = self.self_attn(x, x, x)
         x = x + residule
 
 
@@ -52,14 +52,23 @@ class CLIP(nn.Module):
     def __init__(self, vocab, n_emb, n_head, token):
         super().__init__()
         self.embedding = CLIPEmbedding(vocab, n_emb, token)
-        self.layer = nn.ModuleList([CLIPLayer(12, 768) for _ in range(12)])
-        self.norm = nn.LayerNorm(n_emb)
+        self.layers = nn.ModuleList([CLIPLayer(n_emb, n_head) for _ in range(12)])
+        self.layer_norm = nn.LayerNorm(n_emb)
 
-    def forward(self, e):
-        x = self.embedding(e)
-
-        for layer in self.layer:
+    def forward(self, x):
+        x = self.embedding(x)
+        for layer in self.layers:
             x = layer(x)
-        x = self.norm(x)
+        x = self.layer_norm(x)
         return x
+        
+
+
     
+
+# if __name__ == '__main__':
+#     model = CLIP(100, 512, 8, 100)
+#     x = torch.randint(0, 100, (32, 100)).long()
+#     summary(model, input_data=x)
+#     print(model(x).shape)
+#     # print(model(x).shape)

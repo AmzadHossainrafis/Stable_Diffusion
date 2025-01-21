@@ -81,7 +81,7 @@ class VAETrainer:
         for epoch in range(self.config["epochs"]):
             for i, (images, _) in enumerate(tqdm.tqdm(train_loader)):
                 images = images.to(self.config["device"])
-                noise = torch.randn(images.shape[0], 256,8,8).to(self.config["device"])
+                noise = torch.randn(images.shape[0], 256,images.shape[2]//8,images.shape[2]//8).to(self.config["device"])
                 output = self.model(images, noise)
                 recon_loss = mse_loss_fn(output, images)
                 perseptual_loss = torch.mean(lpips_loss_fn(output, images))

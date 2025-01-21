@@ -68,19 +68,26 @@ class CLIP(nn.Module):
 
     
 
-if __name__ == '__main__':
-    config = {
-        "vocab": 48000,
-        "n_emb": 512,
-        "n_head": 8,
-        "token": 100,
-        "n_layer": 12,
-    }
-    model = CLIP(config).to('cuda')
-    x = torch.randint(0, 10000, (1, 100)).long().to('cuda')
+# if __name__ == '__main__':
+#     config = {
+#         "vocab": 48000,
+#         "n_emb": 512,
+#         "n_head": 8,
+#         "token": 100,
+#         "n_layer": 12,
+#     }
 
+#     def pos_encoding(t, channels):
+#         inv_freq = 1.0 / (
+#             10000
+#             ** (torch.arange(0, channels, 2, device='cuda').float() / channels)
+#         )
+#         pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
+#         pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
+#         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
+#         return pos_enc
+    
+#     model = CLIP(config).to('cuda')
+#     batch_of_text = torch.randint(0, config["vocab"], (32, config["token"])).to('cuda')
+    
 
-
-    summary(model, input_data=x)
-    print(model(x).shape)
-    # print(model(x).shape)

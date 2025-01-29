@@ -3,10 +3,7 @@ import torch
 import torch.nn as nn
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-from torch import optim
 
-
-from torch.utils.tensorboard import SummaryWriter
 
 
 class Diffusion:

@@ -10,10 +10,12 @@ src/SDiffusion/components/LPIPS.py
 src/SDiffusion/components/__init__.py
 src/SDiffusion/components/clip.py
 src/SDiffusion/components/data_loader.py
+src/SDiffusion/components/helper_model.py
 src/SDiffusion/components/models.py
 src/SDiffusion/components/noice_scheduler.py
 src/SDiffusion/components/trainer.py
 src/SDiffusion/pipeline/__init__.py
+src/SDiffusion/pipeline/train_clip_pipeline.py
 src/SDiffusion/pipeline/train_pipeline.py
 src/SDiffusion/pipeline/vae_train_pipeline.py
 src/SDiffusion/utils/__init__.py

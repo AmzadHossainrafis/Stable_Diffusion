@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 # code collected from my repo : https://github.com/AmzadHossainrafis/Diffusion_model/tree/main
 class EMA:
     """'

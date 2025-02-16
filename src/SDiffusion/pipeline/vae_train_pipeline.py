@@ -1,11 +1,15 @@
 import torch
-import torch.nn as nn 
+import torch.nn as nn
 import torchvision
 from SDiffusion.components.models import VAE, Discriminator
 import tqdm
 from SDiffusion.components.LPIPS import LPIPS
 from SDiffusion.utils.exception import CustomException
 from SDiffusion.utils.logger import logger
+import warnings
+
+warnings.filterwarnings("ignore")
+import os
 
 
 class VAETrainer:
@@ -81,20 +85,28 @@ class VAETrainer:
         for epoch in range(self.config["epochs"]):
             for i, (images, _) in enumerate(tqdm.tqdm(train_loader)):
                 images = images.to(self.config["device"])
-                noise = torch.randn(images.shape[0], 256,images.shape[2]//8,images.shape[2]//8).to(self.config["device"])
+                noise = torch.randn(
+                    images.shape[0], 256, images.shape[2] // 8, images.shape[2] // 8
+                ).to(self.config["device"])
                 output = self.model(images, noise)
                 recon_loss = mse_loss_fn(output, images)
                 perseptual_loss = torch.mean(lpips_loss_fn(output, images))
 
                 if i % self.config["inface"] == 0:
-                  # make a simple prediction 
-                   torchvision.utils.make_grid(output.permute(0, 2, 3, 1).detach().cpu(), nrow=5) 
-                   torchvision.utils.save_image(output, f"fig/output_{i}.png" ,nrow= 5,normalize=True)
-                 
+                    # make a simple prediction
+                    torchvision.utils.make_grid(
+                        output.permute(0, 2, 3, 1).detach().cpu(), nrow=5
+                    )
+                    torchvision.utils.save_image(
+                        output, f"fig/output_{i}.png", nrow=5, normalize=True
+                    )
 
                 if i >= self.config["disc_start"]:
                     Disc_output = self.disc_model(images)
-                    disc_loss = disc_loss_fn(Disc_output, torch.ones(Disc_output.shape, device=self.config["device"]))
+                    disc_loss = disc_loss_fn(
+                        Disc_output,
+                        torch.ones(Disc_output.shape, device=self.config["device"]),
+                    )
                     disc_losses.append(disc_loss.item())
 
                 recon_losses.append(recon_loss.item())
@@ -161,8 +173,9 @@ class VAETrainer:
             self.optimizer.zero_grad()
             self.disc_optimizer.step()
             self.disc_optimizer.zero_grad()
-            logger.info(f'Epoch {epoch+1}/{self.config["epochs"]} , recon_loss: {recon_loss.item():.4f}')
-            
+            logger.info(
+                f'Epoch {epoch+1}/{self.config["epochs"]} , recon_loss: {recon_loss.item():.4f}'
+            )
 
             if len(losses) > 0:
                 print(
@@ -191,10 +204,6 @@ class VAETrainer:
 
 
 if __name__ == "__main__":
-
-    
-
-
     config = {
         "batch_size": 35,
         "dataset_dir": r"/home/amzad/Downloads/celb_face/img_align_celeba/",
@@ -203,37 +212,41 @@ if __name__ == "__main__":
         "workers": 4,
         "shuffle": True,
         "lr": 1e-3,
-        "inface": 10,
+        "inface": 300,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
         "epochs": 500,
-        "encoder_acc_steps": 1,
+        "encoder_acc_steps": 4,
         "disc_start": 200,
-        "disc_loss_weight": 0.1,
+        "disc_loss_weight": 0.5,
         "perceptual_loss_weight": 0.1,
-        "nomalizer_weight": 0.1,
-        "save_interval": 10,
+        "nomalizer_weight": 0.5,
+        "save_interval": 100,
         "model_ckpt_dir": "model_checkpoint",
-        "model_path": "artifats/vae_model.pth",
-        "disc_model_path": "artifacts/disc_model.pth",
-
+        "model_path": "vae_model.pth",
+        "disc_model_path": "disc_model.pth",
     }
-    
 
     transform = torchvision.transforms.Compose(
         [
             torchvision.transforms.Resize((config["resize"])),
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize((config["normalize"][0]), (config["normalize"][1])),
+            torchvision.transforms.Normalize(
+                (config["normalize"][0]), (config["normalize"][1])
+            ),
         ]
     )
 
     # load the dataset
-    train_dataset = torchvision.datasets.ImageFolder(root=config["dataset_dir"], transform=transform)
-
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=config["batch_size"], num_workers=config['workers'], shuffle=config['shuffle']
+    train_dataset = torchvision.datasets.ImageFolder(
+        root=config["dataset_dir"], transform=transform
     )
 
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=config["batch_size"],
+        num_workers=config["workers"],
+        shuffle=config["shuffle"],
+    )
 
     model = VAE()
     disc_model = Discriminator()

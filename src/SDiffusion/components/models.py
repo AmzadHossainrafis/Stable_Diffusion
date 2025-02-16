@@ -267,28 +267,19 @@ class Discriminator(nn.Module):
         return out
 
 
+# if __name__ == "__main__":
+#     from torchinfo import summary
+#     model = VAE_encoder().to('cuda')
+#     input_shape = 256
+#     x = torch.randn(1, 3, input_shape, input_shape).to('cuda')
+#     noise = torch.randn(1, 256, input_shape//8, input_shape//8).to('cuda')
+#     out = model(x, noise)
+#     print(out.shape)
+#     model = VAE_decoder().to('cuda')
+#     out = model(out)
+#     print("------decoder------")
+#     print(out.shape)
+#     print('done')
 
-
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    from torchinfo import summary
-    model = VAE_encoder().to('cuda')
-    input_shape = 256
-    x = torch.randn(1, 3, input_shape, input_shape).to('cuda')
-    noise = torch.randn(1, 256, input_shape//8, input_shape//8).to('cuda')
-    out = model(x, noise)
-    print(out.shape)
-    model = VAE_decoder().to('cuda')
-    out = model(out)
-    print("------decoder------")
-    print(out.shape)
-    print('done')
-
-    #number of perameters
-    # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+#     #number of perameters
+#     # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
